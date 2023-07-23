@@ -16,13 +16,21 @@ class Ray{
         
         // find where the ray hits the earth
         // (or off-screen endpoint)
-        var hit = this.getHit(global.earth)
+        var nearestHit = null
+        global.allPlanets.forEach(p => {
+           var h = this.getHit(p)
+           if( (nearestHit==null) || (h[5] < nearestHit[5]) ){
+               nearestHit = h
+           }
+        })
         
-        this.end = hit[0] // REPLACE given endpoint
-        this.aoi = hit[1] // angle of incidence
-        this.acp = hit[2] // angular coord on planet surface
-        this.hitPlanet = hit[3] // true if terminates on surface
-        this.touchAtmo = hit[4] // true if intersects planet atmosphere
+        this.end = nearestHit[0] // REPLACE given endpoint
+        this.aoi = nearestHit[1] // angle of incidence
+        this.acp = nearestHit[2] // angular coord on planet surface
+        this.hitPlanet = nearestHit[3] // true if terminates on surface
+        this.touchAtmo = nearestHit[4] // true if intersects planet atmosphere
+        this.rayLength = nearestHit[5]
+        nearestHit[6].registerSurfaceAoi(this) // compute scattering
     }
     
     // find where this ray hits the given planet
@@ -32,6 +40,8 @@ class Ray{
     //      acp       angle   - angular coord on planet surface
     //      hitPlanet boolean - true if terminates on surface
     //      touchAtmo boolean - true if touches atmosphere
+    //      rayLength distance
+    //      planet    Planet instance
     getHit(planet){      
         var p = planet.pos  
         var r2 = planet.r2
@@ -52,11 +62,15 @@ class Ray{
         var p1 = p.add(vp(npa-theta,planet.rad))
         var p2 = p.add(vp(npa+theta,planet.rad))
         var s = this.start
-        if( p1.sub(s).getD2() < p2.sub(s).getD2() ){
+        var pd1 = p1.sub(s).getD2()
+        var pd2 = p2.sub(s).getD2() 
+        if( pd1 < pd2 ){
             var pos = p1
+            var pd = pd1
             var acp = npa-theta
         } else {
             var pos = p2
+            var pd = pd2
             var acp = npa+theta
         }
         
@@ -74,12 +88,12 @@ class Ray{
         
         // check if missed planet
         if( (rat < 0) || (d2 > r2) ){
-            var touchAtmo = dist<(planet.rad+global.scatterInfluenceRadius)
-            return [this.end,pio2,npa,false,touchAtmo]
+            var touchAtmo = dist<(planet.rad+planet.scatterInfluenceRadius)
+            return [this.end,pio2,npa,false,touchAtmo,this.d.getMagnitude(),planet]
         }
         
         //return [pos,theta,theta]
-        return [pos,pio2-theta,acp,true,true]
+        return [pos,pio2-theta,acp,true,true,pd,planet]
     }
     
     draw(g, debug=false){

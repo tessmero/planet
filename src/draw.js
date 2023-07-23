@@ -5,8 +5,8 @@
 function draw(fps, t) {
    var ctx = global.ctx
    var canvas = global.canvas
-   
-   
+    global.ctx.fillStyle = global.backgroundColor
+    global.ctx.fillRect( 0, 0, canvas.width, canvas.height )
    
    var prevRay = null
    var sp = global.sunPos
@@ -33,17 +33,19 @@ function draw(fps, t) {
    // draw stars
    resetRand()
    var denseO = randRange(-1,0)
-   var denseA = randRange(-.5,.5)
+   //var denseA = randRange(-.5,.5)
    var denseB = randRange(-1,1)
    var denseC = .5
-   var denseSpread = .1
+   var denseSpread = .2
    
    ctx.fillStyle = 'white'
    for( var i = 0 ; i < global.nStars ; i++ ){
        var x,y,r
        if( rand() > .2 ){
            x = rand()
-           y = denseA*Math.pow(x+denseO,2) + denseB*(x+denseO) + denseC
+           //y = denseA*Math.pow(x+denseO,2) + denseB*(x+denseO) + denseC
+           y = denseB*(x+denseO) + denseC
+           
            p = v(x,y).add(vp(rand()*twopi,rand()*denseSpread))
            r = global.minStarRad
        } else {
@@ -65,62 +67,51 @@ function draw(fps, t) {
        var n = global.nSunrays
        var da = twopi / (n-(1e-8))
        
+       // clear scattering data
+       global.allPlanets.forEach(p => p.resetSurfaceAois())
+       
        // iterate through rays once per pass
-       for( var pass = 0 ; pass < 4 ; pass += 1 ){
+       for( var pass = 0 ; pass < 2 ; pass += 1 ){
        
            
            if( pass==0 ){
                // first pass block stars
-               continue
-                ctx.strokeStyle = 'black'
+                ctx.fillStyle = 'black'
                 ctx.lineWidth = .01
                 ctx.lineCap = "round"
                 ctx.beginPath()
-           }
-           if( pass==2 ){
-               // third pass ray drawing
+                global.allPlanets.forEach(p => 
+                    ctx.arc(p.pos.x,p.pos.y,p.rad,0,twopi)
+                )
+                ctx.fill()
                continue
-                ctx.strokeStyle = 'rgba(255,255,255,.2)'
-                ctx.lineWidth = .005
-                ctx.lineCap = "round"
-                ctx.beginPath()
-           }
-           if( pass==3 ){
-               
-               // fourth pass ray drawing
-                ctx.strokeStyle = 'rgb(150,150,0)'
-                ctx.lineWidth = .001
-                ctx.lineCap = "round"
-                ctx.beginPath()
            }
            
+           // start ray drawing
+            ctx.strokeStyle = 'rgb(150,150,0)'
+            ctx.lineWidth = .001
+            ctx.lineCap = "butt"
+            ctx.beginPath()
            resetRand()
-           global.earth.resetSurfaceAois()
+           
            for( var a = 0 ; a < twopi ; a += da ){
                
                var p = randRange(1e3,3e3)
                var o = rand()*1e3
-               var oa = rand()*4e-2 * Math.sin( (global.t-o)/p )
+               var oa = global.sunSpinDa*global.t + rand()*4e-2 * Math.sin( (global.t-o)/p )
+               
+               // construct ray and compute scattering
                var ray = new Ray(sp,sp.add(vp(a+oa,10+rand())))
-               if( pass == 1 ){
-                   // second pass compute scattering
-                   global.earth.registerSurfaceAoi(ray)
-               } else {
-                   // otherwise draw light ray
-                   ray.draw(ctx)
-               }
+               
+               ray.draw(ctx)
            }
            
-           
-           if(pass==1) {
-                // second pass draw scattered light near planet
-                global.earth.draw(ctx)
-           } else {
-                 // otherwise finish ray drawing
-                 ctx.stroke()
-           }
+         // finish ray drawing
+         ctx.stroke()
        }
    }
+    // second pass draw planets and nearby scattered light
+    global.allPlanets.forEach(p => p.draw(ctx))
    
    
    // draw sun circle
@@ -129,6 +120,13 @@ function draw(fps, t) {
    ctx.arc( global.sunPos.x, global.sunPos.y, global.sunRad, 0, twopi )
    ctx.fill()
    
+   
+   //debug
+   //trace always-visible circle
+   //ctx.strokeStyle = 'yellow'
+   //ctx.beginPath()
+   //ctx.arc( .5, .5, .2, 0, twopi )
+   //ctx.stroke()
    
    
     //ctx.clearRect( 0, 0, canvas.width, canvas.height )

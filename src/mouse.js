@@ -1,5 +1,5 @@
 function updateMousePos(event){
-    
+    fitToContainer()
     
     var rect = global.canvas.getBoundingClientRect();
     var scaleX = global.canvas.width / rect.width;
@@ -15,13 +15,10 @@ function updateMousePos(event){
         virtualMouseY = (global.canvasMousePos.y-global.canvasOffsetY)/global.canvasScale
     )
     
-    global.sunPos = global.mousePos
-}
-
-function mouseMove(e){
-    updateMousePos(e)
+    //global.sunPos = global.mousePos
 }
 
 function mouseClick(e){
     updateMousePos(e)
+    global.sunTargetPos = global.mousePos
 }

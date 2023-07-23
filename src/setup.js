@@ -3,15 +3,17 @@
 // Initialize the game
 function init() {
     var cvs = document.getElementById("gameCanvas");
-    cvs.addEventListener("mousemove", mouseMove);
+      cvs.style.width='100%';
+      cvs.style.height='100%';  
+    //cvs.addEventListener("mousemove", mouseMove);
     cvs.addEventListener("click", mouseClick);
     global.canvas = cvs
     global.ctx = cvs.getContext("2d");
     
     var c = v(.5,.5)
-    global.earth = new Planet( c, global.earthRad )
-    global.moon = new Planet( c.add(vp(rand()*twopi,global.moonOrbitRad) ), global.mooonRad )
-    
+    global.earth = new Earth( c, global.earthRad )
+    global.moon = new Moon( c, global.moonRad )
+    global.allPlanets = [global.earth,global.moon]
     
     resetRand()
     requestAnimationFrame(gameLoop);
